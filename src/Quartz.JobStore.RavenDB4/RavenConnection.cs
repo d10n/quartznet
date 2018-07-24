@@ -7,7 +7,7 @@ using Raven.Client.Documents.Session;
 
 namespace Quartz.Impl.RavenDB
 {
-    internal class RavenConnection : IDisposable
+    public class RavenConnection : IDisposable
     {
         private IAsyncDocumentSession session;
         private readonly string schedulerName;
@@ -39,62 +39,73 @@ namespace Quartz.Impl.RavenDB
             }
         }
 
-        public Task Commit(CancellationToken cancellationToken)
+        internal Task Commit(CancellationToken cancellationToken)
         {
             return session.SaveChangesAsync(cancellationToken);
         }
 
-        public void Rollback()
+        internal void Rollback()
         {
             session?.Dispose();
             session = null;
         }
 
-        public IRavenQueryable<Trigger> QueryTriggers()
+        internal IRavenQueryable<Trigger> QueryTriggers()
         {
             return session.Query<Trigger, TriggerIndex>()
                 .Where(x => x.Scheduler == schedulerName);
         }
 
-        public IRavenQueryable<Job> QueryJobs()
+        internal IRavenQueryable<Job> QueryJobs()
         {
             return session.Query<Job, JobIndex>()
                 .Where(x => x.Scheduler == schedulerName);
         }
-        public IRavenQueryable<FiredTrigger> QueryFiredTriggers()
+
+        internal IRavenQueryable<FiredTrigger> QueryFiredTriggers()
         {
             return session.Query<FiredTrigger, FiredTriggerIndex>()
                 .Where(x => x.Scheduler == schedulerName);
         }
 
-        public Task<Scheduler> LoadScheduler(CancellationToken cancellationToken)
+        internal Task<Scheduler> LoadScheduler(CancellationToken cancellationToken)
         {
             return session.LoadAsync<Scheduler>(schedulerName, cancellationToken);
         }
 
-        public Task<Trigger> LoadTrigger(TriggerKey triggerKey, CancellationToken cancellationToken)
+        internal Task<Trigger> LoadTrigger(TriggerKey triggerKey, CancellationToken cancellationToken)
         {
             return session.LoadAsync<Trigger>(triggerKey.DocumentId(schedulerName), cancellationToken);
         }
 
-        public Task<Job> LoadJob(JobKey jobKey, CancellationToken cancellationToken)
+        internal Task<Job> LoadJob(JobKey jobKey, CancellationToken cancellationToken)
         {
             return session.LoadAsync<Job>(jobKey.DocumentId(schedulerName), cancellationToken);
         }
 
-        public Task<bool> ExistsAsync(string id)
+        internal Task<Job> LoadJob(string id, CancellationToken cancellationToken)
+        {
+            return session.LoadAsync<Job>(id, cancellationToken);
+        }
+
+        internal Task<bool> ExistsAsync(string id)
         {
             return session.Advanced.ExistsAsync(id);
         }
 
-        public Task StoreAsync(object entity, string id, CancellationToken cancellationToken)
+        internal Task StoreAsync(object entity, string id, CancellationToken cancellationToken)
         {
             return session.StoreAsync(entity, id, cancellationToken);
         }
 
-        public void Delete(object entity)
+        internal void Delete(object entity)
         {
             session.Delete(entity);
+        }
+
+        internal void Delete(string id)
+        {
+            session.Delete(id);
         }
 
         public void Dispose()
